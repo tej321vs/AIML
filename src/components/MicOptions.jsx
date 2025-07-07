@@ -3,7 +3,7 @@ import React from 'react';
 
 let recognition;
 
-function MicOptions({ setVoiceInput, setVoiceOutput, setShowMicOptions }) {
+function MicOptions({ setVoiceInput, setVoiceOutput, setShowMicOptions, handleUserPrompt }) {
   const handleVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       alert("❌ Voice input not supported in this browser.");
@@ -19,8 +19,15 @@ function MicOptions({ setVoiceInput, setVoiceOutput, setShowMicOptions }) {
 
     recognition.onresult = function (event) {
       const transcript = event.results[0][0].transcript;
+      
+      // Set transcript to the input box (React controlled)
       const inputBox = document.querySelector('input[type="text"]');
-      if (inputBox) inputBox.value = transcript;
+      if (inputBox) {
+        inputBox.value = transcript;
+
+        // Call the function to handle prompt submission
+        handleUserPrompt(transcript);  // 👈 auto-submit after speaking
+      }
     };
 
     recognition.onerror = function (event) {

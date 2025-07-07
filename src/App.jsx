@@ -6,7 +6,7 @@ import AuthModal from './components/AuthModal';
 import MicOptions from './components/MicOptions';
 import './App.css';
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "http://localhost:3000"; // Change this to Render backend URL after deployment
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -21,6 +21,10 @@ function App() {
   useEffect(() => {
     if (!token) return;
     fetchChats();
+
+    const update = () => fetchChats();
+    window.addEventListener('chat-update', update);
+    return () => window.removeEventListener('chat-update', update);
   }, [token]);
 
   const fetchChats = async () => {
@@ -167,6 +171,7 @@ function App() {
               setVoiceInput={setVoiceInput}
               setVoiceOutput={setVoiceOutput}
               setShowMicOptions={setShowMicOptions}
+              handleUserPrompt={handleSend}
             />
           )}
         </>
