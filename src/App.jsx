@@ -6,7 +6,8 @@ import AuthModal from './components/AuthModal';
 import MicOptions from './components/MicOptions';
 import './App.css';
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://nota-y06o.onrender.com";
+
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
