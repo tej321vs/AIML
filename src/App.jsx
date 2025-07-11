@@ -6,7 +6,7 @@ import AuthModal from './components/AuthModal';
 import MicOptions from './components/MicOptions';
 import './App.css';
 
-const API_BASE = "http://localhost:3000"; // Change this to Render backend URL after deployment
+const API_BASE = "http://localhost:3000";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -17,6 +17,7 @@ function App() {
   const [status, setStatus] = useState('');
   const [showMicOptions, setShowMicOptions] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [controller, setController] = useState(null);
 
   useEffect(() => {
     if (!token) return;
@@ -92,6 +93,9 @@ function App() {
     setChats(updatedChats);
     setStatus("Thinking...");
 
+    const newController = new AbortController();
+    setController(newController);
+
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
@@ -99,7 +103,8 @@ function App() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ message: msg, chatId })
+        body: JSON.stringify({ message: msg, chatId }),
+        signal: newController.signal
       });
       const data = await res.json();
       const botMsg = { type: 'bot', text: data.reply };
@@ -112,8 +117,11 @@ function App() {
       setChats(updatedWithReply);
 
       if (voiceOutput) speak(data.reply);
-    } catch {
-      const errorMsg = { type: 'bot', text: '❌ Server error.' };
+    } catch (err) {
+      const errorMsg = {
+        type: 'bot',
+        text: err.name === 'AbortError' ? '❌ Generation stopped.' : '❌ Server error.'
+      };
       const updatedWithError = updatedChats.map((chat, index) =>
         index === currentChatIndex
           ? { ...chat, messages: [...chat.messages, errorMsg] }
@@ -123,6 +131,15 @@ function App() {
     }
 
     setStatus('');
+    setController(null);
+  };
+
+  const handleStop = () => {
+    if (controller) {
+      controller.abort();
+      setController(null);
+      setStatus('');
+    }
   };
 
   const speak = (text) => {
@@ -163,6 +180,8 @@ function App() {
             voiceOutput={voiceOutput}
             setVoiceOutput={setVoiceOutput}
             onToggleSidebar={() => setSidebarVisible(prev => !prev)}
+            onStop={handleStop}
+            canStop={!!controller}
           />
           <button className="logout-btn" onClick={logout}>Logout</button>
           <button className="back-btn" onClick={() => window.location.href = '/launcher.html'}>← Back</button>

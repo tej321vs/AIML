@@ -5,7 +5,8 @@ function Chat({
   chat, onSend, status,
   showMicOptions, setShowMicOptions,
   voiceInput, setVoiceInput, voiceOutput, setVoiceOutput,
-  onToggleSidebar
+  onToggleSidebar,
+  onStop, canStop
 }) {
   const [input, setInput] = useState('');
 
@@ -33,7 +34,7 @@ function Chat({
     const updatedMessages = [...chat.messages, newBotMsg];
     chat.messages = updatedMessages;
 
-    window.dispatchEvent(new Event('chat-update')); // triggers state update in App
+    window.dispatchEvent(new Event('chat-update'));
   };
 
   return (
@@ -64,7 +65,8 @@ function Chat({
         />
         <button onClick={() => setShowMicOptions(true)}>🎤</button>
         <button onClick={handleSend}>➤</button>
-        <button onClick={() => window.speechSynthesis.cancel()}>🛑</button>
+        {canStop && <button onClick={onStop}>⏹️ Stop</button>}
+        <button onClick={() => window.speechSynthesis.cancel()}>⏹️</button>
       </div>
     </div>
   );
