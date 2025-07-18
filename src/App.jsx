@@ -8,7 +8,6 @@ import './App.css';
 
 const API_BASE = "https://nota-y06o.onrender.com";
 
-
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [chats, setChats] = useState([]);
@@ -18,15 +17,10 @@ function App() {
   const [status, setStatus] = useState('');
   const [showMicOptions, setShowMicOptions] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [controller, setController] = useState(null);
 
   useEffect(() => {
     if (!token) return;
     fetchChats();
-
-    const update = () => fetchChats();
-    window.addEventListener('chat-update', update);
-    return () => window.removeEventListener('chat-update', update);
   }, [token]);
 
   const fetchChats = async () => {
@@ -59,13 +53,13 @@ function App() {
     );
     setChats(updated);
 
-    await fetch(`${API_BASE}/chat/rename`, {
-      method: 'POST',
+    await fetch(`${API_BASE}/chat/rename/${chatId}`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ chatId, title: newTitle })
+      body: JSON.stringify({ title: newTitle })
     });
   };
 
@@ -94,9 +88,6 @@ function App() {
     setChats(updatedChats);
     setStatus("Thinking...");
 
-    const newController = new AbortController();
-    setController(newController);
-
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
@@ -104,8 +95,7 @@ function App() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ message: msg, chatId }),
-        signal: newController.signal
+        body: JSON.stringify({ message: msg, chatId })
       });
       const data = await res.json();
       const botMsg = { type: 'bot', text: data.reply };
@@ -118,11 +108,8 @@ function App() {
       setChats(updatedWithReply);
 
       if (voiceOutput) speak(data.reply);
-    } catch (err) {
-      const errorMsg = {
-        type: 'bot',
-        text: err.name === 'AbortError' ? '❌ Generation stopped.' : '❌ Server error.'
-      };
+    } catch {
+      const errorMsg = { type: 'bot', text: '❌ Server error.' };
       const updatedWithError = updatedChats.map((chat, index) =>
         index === currentChatIndex
           ? { ...chat, messages: [...chat.messages, errorMsg] }
@@ -132,15 +119,6 @@ function App() {
     }
 
     setStatus('');
-    setController(null);
-  };
-
-  const handleStop = () => {
-    if (controller) {
-      controller.abort();
-      setController(null);
-      setStatus('');
-    }
   };
 
   const speak = (text) => {
@@ -181,17 +159,14 @@ function App() {
             voiceOutput={voiceOutput}
             setVoiceOutput={setVoiceOutput}
             onToggleSidebar={() => setSidebarVisible(prev => !prev)}
-            onStop={handleStop}
-            canStop={!!controller}
           />
           <button className="logout-btn" onClick={logout}>Logout</button>
-          <button className="back-btn" onClick={() => window.location.href = '/launcher.html'}>← Back</button>
+          <button className="back-btn" onClick={() => window.location.href = 'https://anits-algoverse.vercel.app/'}>← Back</button>
           {showMicOptions && (
             <MicOptions
               setVoiceInput={setVoiceInput}
               setVoiceOutput={setVoiceOutput}
               setShowMicOptions={setShowMicOptions}
-              handleUserPrompt={handleSend}
             />
           )}
         </>
